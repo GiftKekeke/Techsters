@@ -1,0 +1,72 @@
+const taskInput = document.getElementById("taskInput");
+const timeLimitInput = document.getElementById("timeLimit");
+const addTaskBtn = document.getElementById("addTaskBtn");
+const taskList = document.getElementById("taskList");
+
+let tasks = [];
+
+addTaskBtn.addEventListener("click", addTask);
+
+function addTask() {
+  const taskText = taskInput.value.trim();
+  const timeLimit = parseInt(timeLimitInput.value.trim());
+
+  if (!taskText || isNaN(timeLimit) || timeLimit <= 0) {
+    alert("Please enter a valid task and time limit!");
+    return;
+  }
+
+  const task = {
+    id: Date.now(),
+    text: taskText,
+    timeLimit: timeLimit * 60 * 1000, // convert mins to ms
+    createdAt: Date.now(),
+    expired: false
+  };
+
+  tasks.push(task);
+  displayTasks();
+  taskInput.value = "";
+  timeLimitInput.value = "";
+
+  // auto-expire after time limit
+  setTimeout(() => expireTask(task.id), task.timeLimit);
+}
+
+function displayTasks() {
+  taskList.innerHTML = "";
+  tasks.forEach(task => {
+    const li = document.createElement("li");
+    li.className = `task ${task.expired ? "expired" : ""}`;
+    li.innerHTML = `
+      <span>${task.text}</span>
+      <div class="actions">
+        <button onclick="editTask(${task.id})">✏️</button>
+        <button onclick="deleteTask(${task.id})">🗑️</button>
+      </div>
+    `;
+    taskList.appendChild(li);
+  });
+}
+
+function editTask(id) {
+  const task = tasks.find(t => t.id === id);
+  const newText = prompt("Edit your task:", task.text);
+  if (newText !== null && newText.trim() !== "") {
+    task.text = newText.trim();
+    displayTasks();
+  }
+}
+
+function deleteTask(id) {
+  tasks = tasks.filter(t => t.id !== id);
+  displayTasks();
+}
+
+function expireTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (task && !task.expired) {
+    task.expired = true;
+    displayTasks();
+  }
+}
