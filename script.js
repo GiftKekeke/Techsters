@@ -5,55 +5,62 @@ const taskList = document.getElementById("taskList");
 
 let tasks = [];
 
-// Add a new task
+// Add task
 addTaskBtn.addEventListener("click", () => {
   const text = taskInput.value.trim();
   const timeValue = timeInput.value;
 
   if (!text || !timeValue) {
-    alert("Please enter a valid task and time limit.");
+    alert("Please enter both a task and a valid time.");
     return;
   }
 
   const [hours, minutes] = timeValue.split(":").map(Number);
-  const totalMinutes = hours * 60 + minutes;
+  const now = new Date();
+  const dueTime = new Date();
 
-  if (totalMinutes <= 0) {
-    alert("Please set a valid time limit.");
-    return;
+  // ✅ Handle midnight (00:00) correctly
+  dueTime.setHours(hours, minutes, 0, 0);
+  if (dueTime <= now) {
+    dueTime.setDate(dueTime.getDate() + 1);
   }
 
-  const now = Date.now();
   const task = {
-    id: now,
+    id: Date.now(),
     text,
-    createdAt: now,
-    expireAt: now + totalMinutes * 60000,
+    time: dueTime,
     expired: false,
+    alertShown: false
   };
 
   tasks.push(task);
   displayTasks();
-  startTimers(task);
 
   taskInput.value = "";
   timeInput.value = "";
 });
 
-// Display all tasks
+// Display tasks
 function displayTasks() {
   taskList.innerHTML = "";
+  const now = new Date();
+
   tasks.forEach((task) => {
+    if (!task.expired && now >= task.time) {
+      task.expired = true;
+      alert(`Task "${task.text}" has expired!`);
+    }
+
     const li = document.createElement("li");
     li.className = `task ${task.expired ? "expired" : ""}`;
 
-    const remaining = getRemainingTime(task);
+    const timeStr = task.time.toLocaleTimeString([], { 
+      hour: "2-digit", 
+      minute: "2-digit" 
+    });
 
     li.innerHTML = `
-      <div>
-        <span>${task.text}</span>
-        <small>${task.expired ? "Expired" : `Time left: ${remaining}`}</small>
-      </div>
+      <span>${task.text} — <small>${timeStr}</small></span>
       <div>
         <button onclick="editTask(${task.id})">✏️</button>
         <button onclick="deleteTask(${task.id})">🗑️</button>
@@ -63,16 +70,7 @@ function displayTasks() {
   });
 }
 
-// Calculate remaining time
-function getRemainingTime(task) {
-  const diff = task.expireAt - Date.now();
-  if (diff <= 0) return "00:00";
-  const hrs = Math.floor(diff / (1000 * 60 * 60));
-  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
-}
-
-// Edit a task (text + time)
+// Edit task
 function editTask(id) {
   const task = tasks.find((t) => t.id === id);
   if (task.expired) {
@@ -80,63 +78,51 @@ function editTask(id) {
     return;
   }
 
-  const newText = prompt("Edit task text:", task.text);
-  if (newText === null) return;
+  const newText = prompt("Edit task:", task.text);
+  if (newText === null || newText.trim() === "") return;
 
-  const newTime = prompt("Edit time (HH:MM):", "00:00");
-  if (newTime && /^\d{1,2}:\d{2}$/.test(newTime)) {
-    const [h, m] = newTime.split(":").map(Number);
-    const now = Date.now();
-    task.expireAt = now + (h * 60 + m) * 60000;
-    task.expired = false;
-    startTimers(task);
-  }
-
-  if (newText.trim() !== "") task.text = newText.trim();
-
-  displayTasks();
-}
-
-// Delete a task (confirmation)
-function deleteTask(id) {
-  const confirmDelete = confirm("Are you sure you want to delete this task?");
-  if (!confirmDelete) return;
-
-  tasks = tasks.filter((t) => t.id !== id);
-  displayTasks();
-}
-
-// Expire a task
-function expireTask(task) {
-  task.expired = true;
-  displayTasks();
-}
-
-// Start timers (expiration + 2-min warning)
-function startTimers(task) {
-  const remainingMs = task.expireAt - Date.now();
-  if (remainingMs <= 0) {
-    expireTask(task);
+  const newTime = prompt("Edit time (HH:MM, 24-hour format):", task.time.toTimeString().slice(0, 5));
+  if (!/^\d{2}:\d{2}$/.test(newTime)) {
+    alert("Invalid time format.");
     return;
   }
 
-  // 2-minute alert
-  if (remainingMs > 120000) {
-    setTimeout(() => {
-      if (!task.expired) {
-        alert(`⏰ Reminder: Your task "${task.text}" will expire in 2 minutes!`);
-      }
-    }, remainingMs - 120000);
+  const [h, m] = newTime.split(":").map(Number);
+  const updatedTime = new Date();
+  updatedTime.setHours(h, m, 0, 0);
+
+  // ✅ Handle 00:00 and next-day rollover
+  if (updatedTime <= new Date()) {
+    updatedTime.setDate(updatedTime.getDate() + 1);
   }
 
-  // Expire after time
-  setTimeout(() => {
-    if (!task.expired) {
-      expireTask(task);
-      alert(`❌ Task "${task.text}" has expired.`);
-    }
-  }, remainingMs);
+  task.text = newText.trim();
+  task.time = updatedTime;
+  displayTasks();
 }
 
-// Refresh task display every minute
-setInterval(() => displayTasks(), 60000);
+// Delete task
+function deleteTask(id) {
+  const task = tasks.find((t) => t.id === id);
+  const confirmDelete = confirm(`Are you sure you want to delete "${task.text}"?`);
+  if (confirmDelete) {
+    tasks = tasks.filter((t) => t.id !== id);
+    displayTasks();
+  }
+}
+
+// Check alerts & expirations every 30s
+setInterval(() => {
+  const now = new Date();
+  tasks.forEach((task) => {
+    const diff = task.time - now;
+    if (!task.expired && diff <= 0) {
+      task.expired = true;
+      alert(`Task "${task.text}" has expired!`);
+    } else if (!task.alertShown && diff > 0 && diff <= 2 * 60 * 1000) {
+      task.alertShown = true;
+      alert(`Task "${task.text}" will expire in 2 minutes!`);
+    }
+  });
+  displayTasks();
+}, 30000);
