@@ -19,8 +19,10 @@ addTaskBtn.addEventListener("click", () => {
   const now = new Date();
   const dueTime = new Date();
 
-  // ✅ Handle midnight (00:00) correctly
+  // ✅ “00:00” hour is valid — normal 24-hour behavior
   dueTime.setHours(hours, minutes, 0, 0);
+
+  // If selected time already passed, set for next day
   if (dueTime <= now) {
     dueTime.setDate(dueTime.getDate() + 1);
   }
@@ -40,12 +42,13 @@ addTaskBtn.addEventListener("click", () => {
   timeInput.value = "";
 });
 
-// Display tasks
+// Display all tasks
 function displayTasks() {
   taskList.innerHTML = "";
   const now = new Date();
 
   tasks.forEach((task) => {
+    // Mark expired
     if (!task.expired && now >= task.time) {
       task.expired = true;
       alert(`Task "${task.text}" has expired!`);
@@ -54,9 +57,10 @@ function displayTasks() {
     const li = document.createElement("li");
     li.className = `task ${task.expired ? "expired" : ""}`;
 
-    const timeStr = task.time.toLocaleTimeString([], { 
-      hour: "2-digit", 
-      minute: "2-digit" 
+    const timeStr = task.time.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
     });
 
     li.innerHTML = `
@@ -70,7 +74,7 @@ function displayTasks() {
   });
 }
 
-// Edit task
+// Edit a task and its time
 function editTask(id) {
   const task = tasks.find((t) => t.id === id);
   if (task.expired) {
@@ -81,9 +85,13 @@ function editTask(id) {
   const newText = prompt("Edit task:", task.text);
   if (newText === null || newText.trim() === "") return;
 
-  const newTime = prompt("Edit time (HH:MM, 24-hour format):", task.time.toTimeString().slice(0, 5));
+  const newTime = prompt(
+    "Edit time (HH:MM in 24-hour format, 00 allowed):",
+    task.time.toTimeString().slice(0, 5)
+  );
+
   if (!/^\d{2}:\d{2}$/.test(newTime)) {
-    alert("Invalid time format.");
+    alert("Invalid time format. Please use HH:MM (24-hour).");
     return;
   }
 
@@ -91,17 +99,17 @@ function editTask(id) {
   const updatedTime = new Date();
   updatedTime.setHours(h, m, 0, 0);
 
-  // ✅ Handle 00:00 and next-day rollover
   if (updatedTime <= new Date()) {
     updatedTime.setDate(updatedTime.getDate() + 1);
   }
 
   task.text = newText.trim();
   task.time = updatedTime;
+  task.alertShown = false;
   displayTasks();
 }
 
-// Delete task
+// Delete task with confirmation
 function deleteTask(id) {
   const task = tasks.find((t) => t.id === id);
   const confirmDelete = confirm(`Are you sure you want to delete "${task.text}"?`);
@@ -111,11 +119,12 @@ function deleteTask(id) {
   }
 }
 
-// Check alerts & expirations every 30s
+// Check every 30s for expiry and alerts
 setInterval(() => {
   const now = new Date();
   tasks.forEach((task) => {
     const diff = task.time - now;
+
     if (!task.expired && diff <= 0) {
       task.expired = true;
       alert(`Task "${task.text}" has expired!`);
