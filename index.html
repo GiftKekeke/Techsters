@@ -8,11 +8,20 @@
 </head>
 <body>
   <div class="container">
-    <h1>🟧 Daily To-Do Tracker</h1>
+    <h1>🟧 Daily To-Do Tracker (WAT)</h1>
 
     <div class="input-group">
       <input type="text" id="taskInput" placeholder="Enter your task..." />
-      <input type="time" id="timeInput" />
+
+      <div class="time-select">
+        <select id="hourSelect"></select> :
+        <select id="minuteSelect"></select>
+        <select id="ampmSelect">
+          <option value="AM">AM</option>
+          <option value="PM">PM</option>
+        </select>
+      </div>
+
       <button id="addTaskBtn">Add Task</button>
     </div>
 
