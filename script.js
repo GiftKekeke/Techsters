@@ -1,30 +1,24 @@
 const taskInput = document.getElementById("taskInput");
-const timeInput = document.getElementById("timeInput");
+const datetimeInput = document.getElementById("datetimeInput");
 const addTaskBtn = document.getElementById("addTaskBtn");
 const taskList = document.getElementById("taskList");
 
 let tasks = [];
 
-// Add task
+// Add a new task
 addTaskBtn.addEventListener("click", () => {
   const text = taskInput.value.trim();
-  const timeValue = timeInput.value;
+  const datetimeValue = datetimeInput.value;
 
-  if (!text || !timeValue) {
-    alert("Please enter both a task and a valid time.");
+  if (!text || !datetimeValue) {
+    alert("Please enter both a task and a valid date/time.");
     return;
   }
 
-  const [hours, minutes] = timeValue.split(":").map(Number);
-  const now = new Date();
-  const dueTime = new Date();
-
-  // ✅ “00:00” hour is valid — normal 24-hour behavior
-  dueTime.setHours(hours, minutes, 0, 0);
-
-  // If selected time already passed, set for next day
-  if (dueTime <= now) {
-    dueTime.setDate(dueTime.getDate() + 1);
+  const dueTime = new Date(datetimeValue);
+  if (isNaN(dueTime.getTime())) {
+    alert("Invalid date/time format.");
+    return;
   }
 
   const task = {
@@ -32,23 +26,23 @@ addTaskBtn.addEventListener("click", () => {
     text,
     time: dueTime,
     expired: false,
-    alertShown: false
+    alertShown: false,
   };
 
   tasks.push(task);
   displayTasks();
 
   taskInput.value = "";
-  timeInput.value = "";
+  datetimeInput.value = "";
 });
 
-// Display all tasks
+// Display tasks
 function displayTasks() {
   taskList.innerHTML = "";
   const now = new Date();
 
   tasks.forEach((task) => {
-    // Mark expired
+    // Expire if time passed
     if (!task.expired && now >= task.time) {
       task.expired = true;
       alert(`Task "${task.text}" has expired!`);
@@ -57,10 +51,13 @@ function displayTasks() {
     const li = document.createElement("li");
     li.className = `task ${task.expired ? "expired" : ""}`;
 
-    const timeStr = task.time.toLocaleTimeString([], {
+    const timeStr = task.time.toLocaleString([], {
       hour: "2-digit",
       minute: "2-digit",
-      hour12: true
+      hour12: true,
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
 
     li.innerHTML = `
@@ -70,11 +67,12 @@ function displayTasks() {
         <button onclick="deleteTask(${task.id})">🗑️</button>
       </div>
     `;
+
     taskList.appendChild(li);
   });
 }
 
-// Edit a task and its time
+// Edit a task and its datetime
 function editTask(id) {
   const task = tasks.find((t) => t.id === id);
   if (task.expired) {
@@ -85,22 +83,15 @@ function editTask(id) {
   const newText = prompt("Edit task:", task.text);
   if (newText === null || newText.trim() === "") return;
 
-  const newTime = prompt(
-    "Edit time (HH:MM in 24-hour format, 00 allowed):",
-    task.time.toTimeString().slice(0, 5)
+  const newDateTime = prompt(
+    "Edit date and time (YYYY-MM-DDTHH:MM):",
+    task.time.toISOString().slice(0, 16)
   );
 
-  if (!/^\d{2}:\d{2}$/.test(newTime)) {
-    alert("Invalid time format. Please use HH:MM (24-hour).");
+  const updatedTime = new Date(newDateTime);
+  if (isNaN(updatedTime.getTime())) {
+    alert("Invalid datetime format. Use format like 2025-10-17T09:00");
     return;
-  }
-
-  const [h, m] = newTime.split(":").map(Number);
-  const updatedTime = new Date();
-  updatedTime.setHours(h, m, 0, 0);
-
-  if (updatedTime <= new Date()) {
-    updatedTime.setDate(updatedTime.getDate() + 1);
   }
 
   task.text = newText.trim();
@@ -119,9 +110,10 @@ function deleteTask(id) {
   }
 }
 
-// Check every 30s for expiry and alerts
+// Check for alerts and expiry every 30 seconds
 setInterval(() => {
   const now = new Date();
+
   tasks.forEach((task) => {
     const diff = task.time - now;
 
@@ -133,5 +125,6 @@ setInterval(() => {
       alert(`Task "${task.text}" will expire in 2 minutes!`);
     }
   });
+
   displayTasks();
 }, 30000);
