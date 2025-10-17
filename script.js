@@ -5,7 +5,7 @@ const taskList = document.getElementById("taskList");
 
 let tasks = [];
 
-// Add a new task
+// ✅ Safely add new task
 addTaskBtn.addEventListener("click", () => {
   const text = taskInput.value.trim();
   const datetimeValue = datetimeInput.value;
@@ -16,8 +16,9 @@ addTaskBtn.addEventListener("click", () => {
   }
 
   const dueTime = new Date(datetimeValue);
+
   if (isNaN(dueTime.getTime())) {
-    alert("Invalid date/time format.");
+    alert("Invalid date/time format. Please use the picker.");
     return;
   }
 
@@ -32,11 +33,12 @@ addTaskBtn.addEventListener("click", () => {
   tasks.push(task);
   displayTasks();
 
+  // Clear inputs
   taskInput.value = "";
   datetimeInput.value = "";
 });
 
-// Display tasks
+// ✅ Display tasks
 function displayTasks() {
   taskList.innerHTML = "";
   const now = new Date();
@@ -52,12 +54,12 @@ function displayTasks() {
     li.className = `task ${task.expired ? "expired" : ""}`;
 
     const timeStr = task.time.toLocaleString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
       year: "numeric",
       month: "short",
       day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
     });
 
     li.innerHTML = `
@@ -72,7 +74,7 @@ function displayTasks() {
   });
 }
 
-// Edit a task and its datetime
+// ✅ Edit task & datetime
 function editTask(id) {
   const task = tasks.find((t) => t.id === id);
   if (task.expired) {
@@ -90,7 +92,7 @@ function editTask(id) {
 
   const updatedTime = new Date(newDateTime);
   if (isNaN(updatedTime.getTime())) {
-    alert("Invalid datetime format. Use format like 2025-10-17T09:00");
+    alert("Invalid datetime format. Use something like 2025-10-17T09:00");
     return;
   }
 
@@ -100,7 +102,7 @@ function editTask(id) {
   displayTasks();
 }
 
-// Delete task with confirmation
+// ✅ Delete with confirmation
 function deleteTask(id) {
   const task = tasks.find((t) => t.id === id);
   const confirmDelete = confirm(`Are you sure you want to delete "${task.text}"?`);
@@ -110,7 +112,7 @@ function deleteTask(id) {
   }
 }
 
-// Check for alerts and expiry every 30 seconds
+// ✅ Periodically check for 2-min warning & expiry
 setInterval(() => {
   const now = new Date();
 
