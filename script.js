@@ -1,6 +1,5 @@
 const taskInput = document.getElementById("taskInput");
-const hoursInput = document.getElementById("hoursInput");
-const minutesInput = document.getElementById("minutesInput");
+const timeInput = document.getElementById("timeInput");
 const addTaskBtn = document.getElementById("addTaskBtn");
 const taskList = document.getElementById("taskList");
 
@@ -9,13 +8,18 @@ let tasks = [];
 // Add a new task
 addTaskBtn.addEventListener("click", () => {
   const text = taskInput.value.trim();
-  const hours = parseInt(hoursInput.value) || 0;
-  const minutes = parseInt(minutesInput.value) || 0;
+  const timeValue = timeInput.value;
 
+  if (!text || !timeValue) {
+    alert("Please enter a valid task and time limit.");
+    return;
+  }
+
+  const [hours, minutes] = timeValue.split(":").map(Number);
   const totalMinutes = hours * 60 + minutes;
 
-  if (!text || totalMinutes <= 0) {
-    alert("Please enter a valid task and time limit.");
+  if (totalMinutes <= 0) {
+    alert("Please set a valid time limit.");
     return;
   }
 
@@ -32,10 +36,8 @@ addTaskBtn.addEventListener("click", () => {
   displayTasks();
   startTimers(task);
 
-  // Clear inputs
   taskInput.value = "";
-  hoursInput.value = "";
-  minutesInput.value = "";
+  timeInput.value = "";
 });
 
 // Display all tasks
@@ -61,7 +63,7 @@ function displayTasks() {
   });
 }
 
-// Helper to calculate remaining time
+// Calculate remaining time
 function getRemainingTime(task) {
   const diff = task.expireAt - Date.now();
   if (diff <= 0) return "00:00";
@@ -81,26 +83,21 @@ function editTask(id) {
   const newText = prompt("Edit task text:", task.text);
   if (newText === null) return;
 
-  const newHours = prompt("Edit hours (leave blank to keep current):");
-  const newMinutes = prompt("Edit minutes (leave blank to keep current):");
-
-  if (newText.trim() !== "") task.text = newText.trim();
-
-  const hrs = newHours === "" ? 0 : parseInt(newHours) || 0;
-  const mins = newMinutes === "" ? 0 : parseInt(newMinutes) || 0;
-
-  if (hrs > 0 || mins > 0) {
+  const newTime = prompt("Edit time (HH:MM):", "00:00");
+  if (newTime && /^\d{1,2}:\d{2}$/.test(newTime)) {
+    const [h, m] = newTime.split(":").map(Number);
     const now = Date.now();
-    task.createdAt = now;
-    task.expireAt = now + (hrs * 60 + mins) * 60000;
+    task.expireAt = now + (h * 60 + m) * 60000;
     task.expired = false;
     startTimers(task);
   }
 
+  if (newText.trim() !== "") task.text = newText.trim();
+
   displayTasks();
 }
 
-// Delete a task (with confirmation)
+// Delete a task (confirmation)
 function deleteTask(id) {
   const confirmDelete = confirm("Are you sure you want to delete this task?");
   if (!confirmDelete) return;
@@ -115,7 +112,7 @@ function expireTask(task) {
   displayTasks();
 }
 
-// Start timers for expiration + 2-min warning
+// Start timers (expiration + 2-min warning)
 function startTimers(task) {
   const remainingMs = task.expireAt - Date.now();
   if (remainingMs <= 0) {
@@ -123,7 +120,7 @@ function startTimers(task) {
     return;
   }
 
-  // Alert 2 minutes before expiration
+  // 2-minute alert
   if (remainingMs > 120000) {
     setTimeout(() => {
       if (!task.expired) {
@@ -132,7 +129,7 @@ function startTimers(task) {
     }, remainingMs - 120000);
   }
 
-  // Expire after time is up
+  // Expire after time
   setTimeout(() => {
     if (!task.expired) {
       expireTask(task);
@@ -141,5 +138,5 @@ function startTimers(task) {
   }, remainingMs);
 }
 
-// Update display every minute
+// Refresh task display every minute
 setInterval(() => displayTasks(), 60000);

@@ -14,7 +14,7 @@
 
 /* BODY */
 body {
-  background-color: #fffbea;
+  background: linear-gradient(135deg, var(--secondary) 0%, #fffbea 100%);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -23,18 +23,26 @@ body {
 
 /* CONTAINER */
 .container {
-  background: white;
+  background: #fff;
   width: 90%;
   max-width: 600px;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+
+.container:hover {
+  transform: translateY(-4px);
 }
 
 /* TITLE */
 h1 {
   text-align: center;
-  color: var(--primary);
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
   margin-bottom: 20px;
 }
 
@@ -50,23 +58,31 @@ h1 {
   flex: 1;
   padding: 10px;
   border: 1px solid var(--secondary);
-  border-radius: 6px;
+  border-radius: 8px;
   outline: none;
   font-size: 14px;
+  transition: 0.3s;
+}
+
+.input-group input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 5px rgba(255,127,0,0.4);
 }
 
 #addTaskBtn {
-  background: var(--primary);
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
   border: none;
-  color: white;
+  color: #fff;
   padding: 10px 15px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.3s;
+  font-weight: 600;
+  transition: 0.3s ease;
 }
 
 #addTaskBtn:hover {
-  background: #ff9b2f;
+  opacity: 0.9;
+  transform: scale(1.02);
 }
 
 /* TASK LIST */
@@ -89,6 +105,7 @@ ul {
   flex: 1;
   margin-right: 10px;
   word-break: break-word;
+  font-weight: 500;
 }
 
 .task small {
@@ -107,14 +124,16 @@ ul {
 .task button {
   background: none;
   border: none;
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
   margin-left: 5px;
   color: #555;
+  transition: 0.2s;
 }
 
 .task button:hover {
   color: var(--primary);
+  transform: scale(1.1);
 }
 
 /* RESPONSIVE */
